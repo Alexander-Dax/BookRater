@@ -28,19 +28,14 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        run: |
-          cd book_rater_app
-          flutter pub get
+        run: flutter pub get
 
       - name: Build APK
-        run: |
-          cd book_rater_app
-          flutter build apk --release
+        run: flutter build apk --release
 
       - name: Get version from pubspec
         id: version
         run: |
-          cd book_rater_app
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
@@ -49,13 +44,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: book-rater-apk
-          path: book_rater_app/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: book_rater_app/build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: true
           draft: false
           prerelease: false
