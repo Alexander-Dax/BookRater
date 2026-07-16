@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build APK
@@ -48,11 +51,9 @@ jobs:
           retention-days: 30
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: true
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
