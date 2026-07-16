@@ -44,8 +44,8 @@ dependencies:
   excel: ^4.0.6
 
   # File access
-  path_provider: ^2.1.1
-  file_picker: ^6.1.1
+  path_provider: ^2.1.5
+  file_picker: ^11.0.2
   permission_handler: ^11.1.0
 
   # HTTP requests

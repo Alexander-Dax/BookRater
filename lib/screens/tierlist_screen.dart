@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/database_service.dart';
+import '../services/language_service.dart';
 import '../utils/constants.dart';
 import '../widgets/book_cover.dart';
 
 /// Tier-List Visualisierung (S/A/B/C/D/F)
 class TierListScreen extends StatefulWidget {
-  const TierListScreen({super.key});
+  final LanguageService languageService;
+
+  const TierListScreen({super.key, required this.languageService});
 
   @override
   State<TierListScreen> createState() => _TierListScreenState();
@@ -19,6 +22,8 @@ class _TierListScreenState extends State<TierListScreen> {
 
   // Gruppierte Bücher nach Tiers
   final Map<String, List<Book>> _tierBooks = {};
+
+  String t(String key) => widget.languageService.t(key);
 
   @override
   void initState() {
@@ -61,13 +66,13 @@ class _TierListScreenState extends State<TierListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tier-List'),
+        title: Text(t('tierlist')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showTierInfo,
-            tooltip: 'Tier-Erklärung',
+            tooltip: t('tier_explanation'),
           ),
         ],
       ),
@@ -87,7 +92,7 @@ class _TierListScreenState extends State<TierListScreen> {
           Icon(Icons.library_books_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Noch keine Bücher',
+            t('no_books_yet'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -122,17 +127,17 @@ class _TierListScreenState extends State<TierListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Statistik',
+              t('statistics'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Gesamt', _books.length.toString()),
+                _buildStatItem(t('total'), _books.length.toString()),
                 if (_books.isNotEmpty)
                   _buildStatItem(
-                    'Ø Rating',
+                    t('average_rating'),
                     _calculateAverage().toStringAsFixed(2),
                   ),
               ],
@@ -264,14 +269,14 @@ class _TierListScreenState extends State<TierListScreen> {
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Text(
-                  'Keine Bücher in diesem Tier',
+                  t('no_books_in_tier'),
                   style: TextStyle(color: Colors.grey[500]),
                 ),
               ),
             )
           else
             SizedBox(
-              height: 200,
+              height: 220,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.all(12),
@@ -299,59 +304,65 @@ class _TierListScreenState extends State<TierListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Cover (oben)
-              BookCover(
-                book: book,
-                width: 140,
-                height: 85,
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: BookCover(
+                  book: book,
+                  width: 140,
+                  height: 100,
+                ),
               ),
               // Info (unten)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Rating-Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tierColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        book.rating.toStringAsFixed(2),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Rating-Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tierColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          book.rating.toStringAsFixed(2),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Titel
-                    Text(
-                      book.titel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    // Autor
-                    if (book.autor != null && book.autor!.isNotEmpty)
+                      const SizedBox(height: 4),
+                      // Titel
                       Text(
-                        book.autor!,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 10,
+                        book.titel,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                  ],
+                      // Autor
+                      if (book.autor != null && book.autor!.isNotEmpty)
+                        Text(
+                          book.autor!,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 10,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -364,17 +375,17 @@ class _TierListScreenState extends State<TierListScreen> {
   String _getTierDescription(String tierName) {
     switch (tierName) {
       case 'S':
-        return 'Meisterwerke';
+        return t('tier_s');
       case 'A':
-        return 'Exzellent';
+        return t('tier_a');
       case 'B':
-        return 'Gut';
+        return t('tier_b');
       case 'C':
-        return 'Okay';
+        return t('tier_c');
       case 'D':
-        return 'Schwach';
+        return t('tier_d');
       case 'F':
-        return 'Schlecht';
+        return t('tier_f');
       default:
         return '';
     }
@@ -390,21 +401,21 @@ class _TierListScreenState extends State<TierListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (book.autor != null && book.autor!.isNotEmpty)
-              _detailRow('Autor', book.autor!),
-            _detailRow('Rating', book.rating.toStringAsFixed(2)),
-            _detailRow('Tier', _getTierForRating(book.rating)),
+              _detailRow(t('author'), book.autor!),
+            _detailRow(t('rating'), book.rating.toStringAsFixed(2)),
+            _detailRow(t('tier'), _getTierForRating(book.rating)),
             if (book.jahrGelesen != null)
-              _detailRow('Jahr gelesen', book.jahrGelesen.toString()),
+              _detailRow(t('year_read'), book.jahrGelesen.toString()),
             if (book.wortzahl != null)
-              _detailRow('Wortzahl', book.wortzahl.toString()),
+              _detailRow(t('word_count'), book.wortzahl.toString()),
             if (book.meta != null && book.meta!.isNotEmpty)
-              _detailRow('Notizen', book.meta!),
+              _detailRow(t('notes'), book.meta!),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Schließen'),
+            child: Text(t('close')),
           ),
         ],
       ),
@@ -434,15 +445,15 @@ class _TierListScreenState extends State<TierListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tier-System'),
+        title: Text(t('tier_system')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Die Bücher werden basierend auf ihrem Rating in Tiers eingeteilt:',
-                style: TextStyle(fontSize: 14),
+              Text(
+                t('tier_intro'),
+                style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 16),
               for (final tier in tiers) ...[
@@ -495,7 +506,7 @@ class _TierListScreenState extends State<TierListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Verstanden'),
+            child: Text(t('understood')),
           ),
         ],
       ),

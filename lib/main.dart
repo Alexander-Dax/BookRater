@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
+import 'services/language_service.dart';
 
 void main() {
   // Initialisiere sqflite für Desktop-Plattformen
@@ -22,6 +23,23 @@ class BookRaterApp extends StatefulWidget {
 
 class _BookRaterAppState extends State<BookRaterApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  final LanguageService _languageService = LanguageService();
+
+  @override
+  void initState() {
+    super.initState();
+    _languageService.addListener(_onLanguageChanged);
+  }
+
+  @override
+  void dispose() {
+    _languageService.removeListener(_onLanguageChanged);
+    super.dispose();
+  }
+
+  void _onLanguageChanged() {
+    setState(() {});
+  }
 
   void _toggleTheme() {
     setState(() {
@@ -58,7 +76,10 @@ class _BookRaterAppState extends State<BookRaterApp> {
         fontFamily: 'serif',
       ),
 
-      home: HomeScreen(onToggleTheme: _toggleTheme),
+      home: HomeScreen(
+        onToggleTheme: _toggleTheme,
+        languageService: _languageService,
+      ),
     );
   }
 }

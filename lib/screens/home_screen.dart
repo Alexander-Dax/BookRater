@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/database_service.dart';
 import '../services/csv_service.dart';
+import '../services/language_service.dart';
 import '../widgets/book_cover.dart';
 import 'add_book_screen.dart';
 import 'comparison_screen.dart';
@@ -11,8 +12,13 @@ import 'tierlist_screen.dart';
 /// Hauptseite: Zeigt die Liste aller Bücher
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
+  final LanguageService languageService;
 
-  const HomeScreen({super.key, required this.onToggleTheme});
+  const HomeScreen({
+    super.key,
+    required this.onToggleTheme,
+    required this.languageService,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -22,6 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final DatabaseService _db = DatabaseService.instance;
   List<Book> _books = [];
   bool _isLoading = true;
+
+  String t(String key) => widget.languageService.t(key);
 
   @override
   void initState() {
@@ -131,9 +139,39 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buch-Ranking'),
+        title: Text(t('app_title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Language Toggle
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            tooltip: widget.languageService.currentLanguage == 'de' ? 'Sprache' : 'Language',
+            onSelected: (languageCode) {
+              widget.languageService.setLanguage(languageCode);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'de',
+                child: Row(
+                  children: [
+                    Text('🇩🇪'),
+                    SizedBox(width: 8),
+                    Text('Deutsch'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'en',
+                child: Row(
+                  children: [
+                    Text('🇬🇧'),
+                    SizedBox(width: 8),
+                    Text('English'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           // Dark Mode Toggle
           IconButton(
             icon: Icon(
@@ -142,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : Icons.dark_mode,
             ),
             onPressed: widget.onToggleTheme,
-            tooltip: 'Theme umschalten',
+            tooltip: t('toggle_theme'),
           ),
           // Tier-List Button
           IconButton(
@@ -151,16 +189,16 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const TierListScreen(),
+                  builder: (context) => TierListScreen(languageService: widget.languageService),
                 ),
               );
             },
-            tooltip: 'Tier-List anzeigen',
+            tooltip: t('show_tierlist'),
           ),
           // CSV Export
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            tooltip: 'Weitere Optionen',
+            tooltip: t('more_options'),
             onSelected: (value) async {
               if (value == 'export') {
                 await _exportCSV();
@@ -169,23 +207,23 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export',
                 child: Row(
                   children: [
-                    Icon(Icons.file_download),
-                    SizedBox(width: 8),
-                    Text('CSV Export'),
+                    const Icon(Icons.file_download),
+                    const SizedBox(width: 8),
+                    Text(t('csv_export')),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'import',
                 child: Row(
                   children: [
-                    Icon(Icons.file_upload),
-                    SizedBox(width: 8),
-                    Text('CSV Import'),
+                    const Icon(Icons.file_upload),
+                    const SizedBox(width: 8),
+                    Text(t('csv_import')),
                   ],
                 ),
               ),
@@ -194,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadBooks,
-            tooltip: 'Aktualisieren',
+            tooltip: t('refresh'),
           ),
         ],
       ),
@@ -205,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : _buildBookList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _addBook,
-        tooltip: 'Buch hinzufügen',
+        tooltip: t('add_book'),
         child: const Icon(Icons.add),
       ),
     );
@@ -224,14 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Noch keine Bücher',
+            t('no_books_yet'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.grey[600],
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Tippe auf + um dein erstes Buch hinzuzufügen',
+            t('add_first_book'),
             style: TextStyle(color: Colors.grey[600]),
           ),
         ],
@@ -250,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: [
               Text(
-                '${_books.length} ${_books.length == 1 ? 'Buch' : 'Bücher'}',
+                '${_books.length} ${_books.length == 1 ? t('books_count_single') : t('books_count_plural')}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const Spacer(),
@@ -276,46 +314,62 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBookCard(Book book) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Cover
-            BookCover(
-              book: book,
-              width: 40,
-              height: 60,
-            ),
-            const SizedBox(width: 12),
-            // Rating Badge
-            CircleAvatar(
-              backgroundColor: _getRatingColor(book.rating),
-              radius: 18,
-              child: Text(
-                book.rating.toStringAsFixed(1),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+      child: InkWell(
+        onTap: () => _editBook(book),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Cover
+              BookCover(
+                book: book,
+                width: 40,
+                height: 60,
+              ),
+              const SizedBox(width: 12),
+              // Rating Badge
+              CircleAvatar(
+                backgroundColor: _getRatingColor(book.rating),
+                radius: 18,
+                child: Text(
+                  book.rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              // Title and Author
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.titel,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if (book.autor != null && book.autor!.isNotEmpty)
+                      Text(
+                        book.autor!,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Year
+              if (book.jahrGelesen != null)
+                Text(
+                  book.jahrGelesen.toString(),
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+            ],
+          ),
         ),
-        title: Text(
-          book.titel,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: book.autor != null && book.autor!.isNotEmpty
-            ? Text(book.autor!)
-            : null,
-        trailing: book.jahrGelesen != null
-            ? Text(
-                book.jahrGelesen.toString(),
-                style: TextStyle(color: Colors.grey[600]),
-              )
-            : null,
-        onTap: () => _editBook(book),
       ),
     );
   }
