@@ -141,6 +141,34 @@ class RatingService {
     return (val * 100).roundToDouble() / 100;
   }
 
+  /// Berechnet neue Ratings für eine komplette Buchliste neu
+  ///
+  /// [books]: Alle Bücher (beliebige Reihenfolge)
+  ///
+  /// Gibt die Bücher mit aktualisierten Ratings zurück
+  static List<Book> respaceRatings(
+    List<Book> books, {
+    RespaceMode mode = defaultRespaceMode,
+  }) {
+    if (books.isEmpty) return [];
+
+    // Sortiere nach Rating (aufsteigend)
+    final sorted = List<Book>.from(books)..sort((a, b) => a.rating.compareTo(b.rating));
+
+    // Sammle Ratings
+    final targets = sorted.map((b) => b.rating).toList();
+
+    // Neue Ratings berechnen
+    final newRatings = respace(targets, mode: mode);
+
+    // Ratings zuweisen
+    for (int i = 0; i < sorted.length; i++) {
+      sorted[i] = sorted[i].copyWith(rating: newRatings[i]);
+    }
+
+    return sorted;
+  }
+
   /// Aktualisiert die Ratings einer Buchliste nach dem Einfügen eines neuen Buches
   ///
   /// [booksAsc]: Alle Bücher in aufsteigender Reihenfolge (inklusive neuem Buch)

@@ -2,15 +2,8 @@ name: Build and Release APK
 
 on:
   push:
-    branches:
-      - main
-      - master
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
@@ -31,7 +24,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.27.1'
           channel: 'stable'
 
       - name: Install dependencies
@@ -55,7 +48,6 @@ jobs:
           retention-days: 30
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
@@ -64,20 +56,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Latest Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        uses: andelf/nightly-release@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: latest
-          name: 'Latest Build'
-          prerelease: true
-          body: |
-            Automatischer Build vom ${{ github.sha }}
-
-            **Achtung:** Dies ist ein automatischer Build und könnte instabil sein.
-            Für stabile Versionen siehe die offiziellen Releases.
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
