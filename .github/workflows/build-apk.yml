@@ -33,16 +33,44 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "❌ ERROR: KEYSTORE_BASE64 secret is not set!"
+            echo "Please add the base64-encoded keystore to GitHub Secrets."
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
+            echo "❌ ERROR: KEYSTORE_PASSWORD secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "❌ ERROR: KEY_PASSWORD secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "❌ ERROR: KEY_ALIAS secret is not set!"
+            exit 1
+          fi
+          echo "✅ All required secrets are set"
+
       - name: Create keystore file
         run: |
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> key.properties
           echo "storeFile=app/upload-keystore.jks" >> key.properties
+          cat key.properties
 
       - name: Decode and save keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
+          if [ ! -f android/app/upload-keystore.jks ]; then
+            echo "❌ ERROR: Keystore file was not created!"
+            exit 1
+          fi
+          echo "✅ Keystore file created successfully"
+          ls -lh android/app/upload-keystore.jks
 
       - name: Build APK
         run: flutter build apk --release
