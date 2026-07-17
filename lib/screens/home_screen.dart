@@ -7,6 +7,7 @@ import 'add_book_screen.dart';
 import 'comparison_screen.dart';
 import 'edit_book_screen.dart';
 import 'import_export_screen.dart';
+import 'theme_selection_screen.dart';
 import 'tierlist_screen.dart';
 
 /// Hauptseite: Zeigt die Liste aller Bücher
@@ -213,6 +214,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ).then((_) => _loadBooks()); // Reload books after import/export
             },
             tooltip: 'Import & Export',
+          ),
+          // Theme Selection Button
+          IconButton(
+            icon: const Icon(Icons.palette),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ThemeSelectionScreen(),
+                ),
+              );
+            },
+            tooltip: 'Farbschema',
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

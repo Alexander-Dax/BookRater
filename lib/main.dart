@@ -3,13 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
 import 'services/language_service.dart';
+import 'services/theme_service.dart';
 
-void main() {
+void main() async {
+  // Initialisiere Flutter Bindings
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Initialisiere sqflite für Desktop-Plattformen
   if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+
+  // Initialisiere Theme-Service
+  await ThemeService().init();
 
   runApp(const BookRaterApp());
 }
@@ -24,20 +31,27 @@ class BookRaterApp extends StatefulWidget {
 class _BookRaterAppState extends State<BookRaterApp> {
   ThemeMode _themeMode = ThemeMode.system;
   final LanguageService _languageService = LanguageService();
+  final ThemeService _themeService = ThemeService();
 
   @override
   void initState() {
     super.initState();
     _languageService.addListener(_onLanguageChanged);
+    _themeService.addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
     _languageService.removeListener(_onLanguageChanged);
+    _themeService.removeListener(_onThemeChanged);
     super.dispose();
   }
 
   void _onLanguageChanged() {
+    setState(() {});
+  }
+
+  void _onThemeChanged() {
     setState(() {});
   }
 
@@ -56,25 +70,11 @@ class _BookRaterAppState extends State<BookRaterApp> {
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
 
-      // Light Theme
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7a5c3e), // Braun
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: 'serif',
-      ),
+      // Light Theme - dynamisch basierend auf Benutzerauswahl
+      theme: _themeService.getLightTheme(),
 
-      // Dark Theme
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7a5c3e), // Braun
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        fontFamily: 'serif',
-      ),
+      // Dark Theme - dynamisch basierend auf Benutzerauswahl
+      darkTheme: _themeService.getDarkTheme(),
 
       home: HomeScreen(
         onToggleTheme: _toggleTheme,

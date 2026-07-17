@@ -14,6 +14,25 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Export als PDF
 
 
+## [1.4.0] - 2026-07-17
+
+### Added (Neu hinzugefügt)
+- **Theme Customization**: Auswahl aus 8 vordefinierten Farbschemata
+  - Deep Purple (Standard)
+  - Ocean Blue
+  - Forest Green
+  - Sunset Orange
+  - Crimson Red
+  - Royal Indigo
+  - Teak Brown
+  - Slate Gray
+  - Persistente Speicherung der Theme-Auswahl
+  - Material 3 ColorScheme mit automatischer Light/Dark Mode Unterstützung
+  - Theme-Auswahl-Screen mit visueller Vorschau
+  - Palette-Icon in der Home-Screen AppBar für schnellen Zugriff
+  - Sofortige Anwendung des ausgewählten Themes
+
+
 ## [1.3.0] - 2026-07-17
 
 ### Added (Neu hinzugefügt)
@@ -56,7 +75,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - `_scanBarcode()` ruft jetzt `_lookupIsbn()` auf
   - DRY-Prinzip: Lookup-Logik nur an einer Stelle
   - Konsistente Implementierung in beiden Screens
-  
+
 - **Home Screen Refactoring**:
   - CSV Import/Export aus Popup-Menü entfernt
   - Neuer Import/Export Button in AppBar

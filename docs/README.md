@@ -19,6 +19,7 @@ Diese Dokumentation ist in verschiedene Bereiche aufgeteilt, um eine einfache Na
   - [ISBN-Scanner](features/isbn-scanner.md)
   - [Import/Export](features/import-export.md)
   - [Tier-List](features/tier-list.md)
+  - [Theme Customization](features/theme-customization.md)
 
 - **[API & Services](api/)** - Service-Schicht Dokumentation
   - [Database Service](api/database-service.md)
@@ -146,5 +147,5 @@ Fehler gefunden? Verbesserungsvorschlag? Siehe [Contributing Guide](CONTRIBUTING
 ---
 
 **Letzte Aktualisierung**: 2026-07-17
-**Version**: 1.3.0
+**Version**: 1.4.0
 **Maintainer**: BookRater Team

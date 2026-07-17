@@ -54,6 +54,9 @@ dependencies:
   # Barcode scanning
   mobile_scanner: ^5.2.3
 
+  # Persistent storage for settings
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
