@@ -31,11 +31,9 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        working-directory: book_rater_app
         run: flutter pub get
 
       - name: Create keystore file
-        working-directory: book_rater_app
         run: |
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> key.properties
@@ -43,16 +41,13 @@ jobs:
           echo "storeFile=app/upload-keystore.jks" >> key.properties
 
       - name: Decode and save keystore
-        working-directory: book_rater_app
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
 
       - name: Build APK
-        working-directory: book_rater_app
         run: flutter build apk --release
 
       - name: Get version from pubspec
-        working-directory: book_rater_app
         id: version
         run: |
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
@@ -63,13 +58,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: book-rater-apk
-          path: book_rater_app/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: book_rater_app/build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: true
           draft: false
           prerelease: false
