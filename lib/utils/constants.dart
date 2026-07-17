@@ -1,4 +1,5 @@
 /// Konstanten für das Buch-Rating-System
+library;
 
 /// Mindestabstand zwischen zwei benachbarten Ratings beim Glätten.
 /// 0.05 ist fein genug für mehrere hundert Bücher und hält Zahlen "ruhig".

@@ -81,6 +81,25 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
     if (isbn == null) return;
 
+    // ISBN setzen und Lookup durchführen
+    _isbnController.text = isbn;
+    await _lookupIsbn();
+  }
+
+  /// Lädt Buchdaten anhand der eingegebenen ISBN
+  Future<void> _lookupIsbn() async {
+    final isbn = _isbnController.text.trim();
+
+    if (isbn.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte zuerst eine ISBN eingeben'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     // Zeige Loading-Indikator
     if (!mounted) return;
     showDialog(
@@ -98,11 +117,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
     Navigator.pop(context); // Schließe Loading-Dialog
 
     if (bookInfo == null) {
-      // Keine Daten gefunden - nur ISBN setzen
-      _isbnController.text = isbn;
+      // Keine Daten gefunden
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ISBN gescannt, aber keine Buchdaten gefunden'),
+          content: Text('Keine Buchdaten für diese ISBN gefunden'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -111,10 +129,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
     // Fülle Felder aus
     _isbnController.text = bookInfo['isbn'] ?? isbn;
-    if (bookInfo['title'] != null) {
+    if (bookInfo['title'] != null && _titelController.text.isEmpty) {
       _titelController.text = bookInfo['title']!;
     }
-    if (bookInfo['author'] != null) {
+    if (bookInfo['author'] != null && _autorController.text.isEmpty) {
       _autorController.text = bookInfo['author']!;
     }
 
@@ -173,20 +191,42 @@ class _AddBookScreenState extends State<AddBookScreen> {
             const SizedBox(height: 16),
 
             // ISBN mit Barcode-Scanner
-            TextFormField(
-              controller: _isbnController,
-              decoration: InputDecoration(
-                labelText: 'ISBN',
-                hintText: '978-3-16-148410-0',
-                border: const OutlineInputBorder(),
-                helperText: 'Barcode scannen oder manuell eingeben',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner),
-                  onPressed: _scanBarcode,
-                  tooltip: 'Barcode scannen',
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _isbnController,
+                    decoration: InputDecoration(
+                      labelText: 'ISBN',
+                      hintText: '978-3-16-148410-0',
+                      border: const OutlineInputBorder(),
+                      helperText: 'Barcode scannen oder manuell eingeben',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.qr_code_scanner),
+                        onPressed: _scanBarcode,
+                        tooltip: 'Barcode scannen',
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
                 ),
-              ),
-              keyboardType: TextInputType.number,
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ElevatedButton.icon(
+                    onPressed: _lookupIsbn,
+                    icon: const Icon(Icons.search, size: 20),
+                    label: const Text('Laden'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),

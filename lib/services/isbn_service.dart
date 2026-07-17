@@ -25,7 +25,7 @@ class IsbnService {
       );
 
       if (response.statusCode != 200) {
-        print('ISBN Lookup Fehler: Status ${response.statusCode}');
+        // HTTP Fehler bei ISBN Lookup
         return null;
       }
 
@@ -33,7 +33,7 @@ class IsbnService {
       final key = 'ISBN:$cleanIsbn';
 
       if (!data.containsKey(key)) {
-        print('Keine Daten für ISBN $cleanIsbn gefunden');
+        // Keine Daten für diese ISBN gefunden
         return null;
       }
 
@@ -62,14 +62,17 @@ class IsbnService {
         coverUrl = cover['large'] as String? ?? cover['medium'] as String?;
       }
 
-      return {
+      final result = <String, String>{
         'title': title,
-        if (author != null) 'author': author,
         'isbn': cleanIsbn,
-        if (coverUrl != null) 'coverUrl': coverUrl,
       };
+
+      if (author != null) result['author'] = author;
+      if (coverUrl != null) result['coverUrl'] = coverUrl;
+
+      return result;
     } catch (e) {
-      print('ISBN Lookup Fehler: $e');
+      // Fehler beim ISBN Lookup (z.B. Netzwerkfehler)
       return null;
     }
   }
@@ -119,26 +122,27 @@ class IsbnService {
         coverUrl = imageLinks['thumbnail'] as String? ?? imageLinks['smallThumbnail'] as String?;
       }
 
-      return {
+      final result = <String, String>{
         'title': title,
-        if (author != null) 'author': author,
         'isbn': cleanIsbn,
-        if (coverUrl != null) 'coverUrl': coverUrl,
       };
+
+      if (author != null) result['author'] = author;
+      if (coverUrl != null) result['coverUrl'] = coverUrl;
+
+      return result;
     } catch (e) {
-      print('Google Books Lookup Fehler: $e');
+      // Fehler beim Google Books Lookup (z.B. Netzwerkfehler)
       return null;
     }
   }
 
   /// Lookup mit Fallback: Versuche zuerst Open Library, dann Google Books
   Future<Map<String, String>?> lookup(String isbn) async {
-    var result = await lookupByIsbn(isbn);
-
-    if (result == null) {
-      // Fallback zu Google Books
-      result = await lookupByIsbnGoogle(isbn);
-    }
+    // Versuche zuerst Open Library
+    final result = await lookupByIsbn(isbn) ??
+                   // Fallback zu Google Books
+                   await lookupByIsbnGoogle(isbn);
 
     return result;
   }

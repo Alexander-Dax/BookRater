@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/database_service.dart';
-import '../services/csv_service.dart';
 import '../services/language_service.dart';
 import '../widgets/book_cover.dart';
 import 'add_book_screen.dart';
 import 'comparison_screen.dart';
 import 'edit_book_screen.dart';
+import 'import_export_screen.dart';
 import 'tierlist_screen.dart';
 
 /// Hauptseite: Zeigt die Liste aller Bücher
@@ -201,39 +201,18 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             tooltip: t('show_tierlist'),
           ),
-          // CSV Export
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: t('more_options'),
-            onSelected: (value) async {
-              if (value == 'export') {
-                await _exportCSV();
-              } else if (value == 'import') {
-                await _importCSV();
-              }
+          // Import/Export Button
+          IconButton(
+            icon: const Icon(Icons.import_export),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ImportExportScreen(languageService: widget.languageService),
+                ),
+              ).then((_) => _loadBooks()); // Reload books after import/export
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'export',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_download),
-                    const SizedBox(width: 8),
-                    Text(t('csv_export')),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'import',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_upload),
-                    const SizedBox(width: 8),
-                    Text(t('csv_import')),
-                  ],
-                ),
-              ),
-            ],
+            tooltip: 'Import & Export',
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -390,87 +369,4 @@ class _HomeScreenState extends State<HomeScreen> {
     return Colors.red[400]!; // Rot (F-Tier)
   }
 
-  /// Exportiert alle Bücher als CSV
-  Future<void> _exportCSV() async {
-    final csvService = CsvService.instance;
-
-    // Zeige Loading
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    final filePath = await csvService.exportToCSV();
-
-    if (!mounted) return;
-    Navigator.pop(context); // Loading schließen
-
-    if (filePath != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_books.length} Bücher exportiert nach:\n$filePath'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'OK',
-            onPressed: () {},
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Export fehlgeschlagen'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  /// Importiert Bücher aus einer CSV-Datei
-  Future<void> _importCSV() async {
-    final csvService = CsvService.instance;
-
-    // Zeige Loading
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    final result = await csvService.importFromCSV();
-
-    if (!mounted) return;
-    Navigator.pop(context); // Loading schließen
-
-    if (result.success) {
-      // Bücher neu laden
-      await _loadBooks();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.message,
-          ),
-          duration: const Duration(seconds: 4),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 }

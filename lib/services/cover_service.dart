@@ -17,7 +17,7 @@ class CoverService {
   /// Rückgabe: true wenn erfolgreich, false wenn nicht
   Future<bool> downloadCover(Book book) async {
     if (book.isbn == null || book.isbn!.isEmpty) {
-      print('Kein ISBN für "${book.titel}"');
+      // Kein ISBN vorhanden - Cover-Download nicht möglich
       return false;
     }
 
@@ -25,7 +25,7 @@ class CoverService {
     final isbn = book.isbn!.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (isbn.isEmpty) {
-      print('Ungültige ISBN: ${book.isbn}');
+      // Ungültige ISBN nach Bereinigung
       return false;
     }
 
@@ -36,7 +36,7 @@ class CoverService {
       final url = 'https://covers.openlibrary.org/b/isbn/$isbn-$size.jpg';
 
       try {
-        print('Versuche Cover-Download: $url');
+        // Versuche Cover-Download von Open Library
         final response = await http.get(Uri.parse(url)).timeout(
           const Duration(seconds: 10),
         );
@@ -58,20 +58,20 @@ class CoverService {
           final file = File('${coversDir.path}/$filename');
           await file.writeAsBytes(response.bodyBytes);
 
-          // Update das Buch in der Datenbank
+          // Update das Buch in der Datenbank mit dem Cover-Pfad
           final updatedBook = book.copyWith(coverUrl: file.path);
           await _db.updateBook(updatedBook);
 
-          print('Cover gespeichert: ${file.path}');
+          // Cover erfolgreich gespeichert
           return true;
         }
       } catch (e) {
-        print('Fehler beim Cover-Download ($size): $e');
+        // Fehler beim Cover-Download für diese Größe, versuche nächste
         continue;
       }
     }
 
-    print('Kein Cover gefunden für ISBN: $isbn');
+    // Kein Cover für diese ISBN gefunden
     return false;
   }
 
@@ -100,14 +100,14 @@ class CoverService {
       final file = File(book.coverUrl!);
       if (await file.exists()) {
         await file.delete();
-        print('Cover gelöscht: ${book.coverUrl}');
+        // Cover-Datei erfolgreich gelöscht
       }
 
-      // Update Datenbank
+      // Update Datenbank - entferne Cover-URL-Referenz
       final updatedBook = book.copyWith(coverUrl: null);
       await _db.updateBook(updatedBook);
     } catch (e) {
-      print('Fehler beim Löschen des Covers: $e');
+      // Fehler beim Löschen des Covers - ignorieren und fortfahren
     }
   }
 

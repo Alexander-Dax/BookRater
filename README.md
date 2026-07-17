@@ -71,47 +71,64 @@ CREATE TABLE books (
 | D    | 3.0 - 5.0      | Rot   | Mittelmäßig |
 | F    | 0.0 - 3.0      | Grau  | Schwach |
 
+## 📚 Dokumentation
+
+Die vollständige technische Dokumentation findest du unter **[docs/](docs/)**:
+
+- **[Dokumentations-Index](docs/README.md)** - Übersicht über alle Docs
+- **[Setup Guide](docs/guides/setup.md)** - Installation & Entwicklungsumgebung
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - Wie man beiträgt
+- **[Projektstruktur](docs/architecture/project-structure.md)** - Code-Organisation
+- **[Rating-System](docs/features/rating-system.md)** - Algorithmen erklärt
+- **[API-Docs](docs/api/)** - Service-Dokumentation
+
+### Quick Links
+
+- **Signing Setup**: [../SIGNING_SETUP.md](../SIGNING_SETUP.md) - APK-Signierung konfigurieren
+- **Quick Reference**: [../QUICK_REFERENCE.md](../QUICK_REFERENCE.md) - Häufige Befehle
+- **Changelog**: [CHANGELOG.md](CHANGELOG.md) - Versions-Historie
+
 ## Entwicklung
 
 ### Voraussetzungen
 ```bash
-flutter --version  # 3.24.0 oder höher
-dart --version     # 3.5.0 oder höher
+flutter --version  # 3.11.5 oder höher
+dart --version     # 3.11.5 oder höher
 ```
 
-### Setup
+### Quick Start
 ```bash
-cd book_rater_app
+# 1. Dependencies installieren
 flutter pub get
-flutter run -d linux  # Zum Testen auf Linux
-flutter build apk --release  # Android APK bauen
+
+# 2. App starten
+flutter run
+
+# 3. Build erstellen
+flutter build apk --release
 ```
+
+Detaillierte Anleitung: [Setup Guide](docs/guides/setup.md)
 
 ### Projektstruktur
 ```
 book_rater_app/
 ├── lib/
 │   ├── main.dart              # App Entry Point
-│   ├── models/
-│   │   └── book.dart          # Book Datenmodell
-│   ├── services/
-│   │   ├── database_service.dart     # SQLite CRUD
-│   │   ├── rating_service.dart       # PAVA Algorithmus
-│   │   ├── comparison_service.dart   # Galloping Search
-│   │   └── cover_service.dart        # Cover Downloads
-│   ├── screens/
-│   │   ├── home_screen.dart          # Hauptansicht (Liste)
-│   │   ├── add_book_screen.dart      # Buch hinzufügen
-│   │   ├── edit_book_screen.dart     # Buch bearbeiten
-│   │   ├── comparison_screen.dart    # Vergleichs-UI
-│   │   └── tierlist_screen.dart      # Tier-List Ansicht
-│   ├── widgets/
-│   │   └── book_cover.dart           # Wiederverwendbare Cover-Anzeige
-│   └── utils/
-│       └── constants.dart            # Tier-Definitionen, Konstanten
-└── android/
-    └── app/src/main/AndroidManifest.xml  # App-Berechtigungen
+│   ├── models/                # Datenmodelle
+│   ├── services/              # Business Logic
+│   ├── screens/               # UI Screens
+│   ├── widgets/               # Wiederverwendbare Widgets
+│   └── utils/                 # Konstanten, Helpers
+├── docs/                      # 📚 Vollständige Dokumentation
+│   ├── architecture/          # System-Design
+│   ├── features/              # Feature-Beschreibungen
+│   ├── api/                   # API-Dokumentation
+│   └── guides/                # Entwickler-Guides
+└── android/                   # Android-Konfiguration
 ```
+
+Mehr Details: [Projektstruktur-Dokumentation](docs/architecture/project-structure.md)
 
 ## Migration von Python
 

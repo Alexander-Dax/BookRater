@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/book.dart';
 import '../services/database_service.dart';
 import '../services/cover_service.dart';
+import '../services/isbn_service.dart';
 import '../widgets/book_cover.dart';
 import 'comparison_screen.dart';
 
@@ -159,6 +161,81 @@ class _EditBookScreenState extends State<EditBookScreen> {
         setState(() => _isDownloadingCover = false);
       }
     }
+  }
+
+  /// Öffnet den Barcode-Scanner für ISBN
+  Future<void> _scanBarcode() async {
+    final isbn = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const _BarcodeScannerScreen(),
+      ),
+    );
+
+    if (isbn == null) return;
+
+    // ISBN setzen und Lookup durchführen
+    _isbnController.text = isbn;
+    await _lookupIsbn();
+  }
+
+  /// Lädt Buchdaten anhand der eingegebenen ISBN
+  Future<void> _lookupIsbn() async {
+    final isbn = _isbnController.text.trim();
+
+    if (isbn.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte zuerst eine ISBN eingeben'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Zeige Loading-Indikator
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Lookup ISBN
+    final bookInfo = await IsbnService.instance.lookup(isbn);
+
+    if (!mounted) return;
+    Navigator.pop(context); // Schließe Loading-Dialog
+
+    if (bookInfo == null) {
+      // Keine Daten gefunden
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Keine Buchdaten für diese ISBN gefunden'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Fülle Felder aus
+    _isbnController.text = bookInfo['isbn'] ?? isbn;
+    if (bookInfo['title'] != null && _titelController.text.isEmpty) {
+      _titelController.text = bookInfo['title']!;
+    }
+    if (bookInfo['author'] != null && _autorController.text.isEmpty) {
+      _autorController.text = bookInfo['author']!;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✓ Buchdaten geladen'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   /// Bestätigungs-Dialog fürs Löschen
@@ -340,15 +417,43 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
             const SizedBox(height: 16),
 
-            // ISBN
-            TextFormField(
-              controller: _isbnController,
-              decoration: const InputDecoration(
-                labelText: 'ISBN',
-                hintText: '978-3-16-148410-0',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
+            // ISBN mit Barcode-Scanner
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _isbnController,
+                    decoration: InputDecoration(
+                      labelText: 'ISBN',
+                      hintText: '978-3-16-148410-0',
+                      border: const OutlineInputBorder(),
+                      helperText: 'Barcode scannen oder manuell eingeben',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.qr_code_scanner),
+                        onPressed: _scanBarcode,
+                        tooltip: 'Barcode scannen',
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ElevatedButton.icon(
+                    onPressed: _lookupIsbn,
+                    icon: const Icon(Icons.search, size: 20),
+                    label: const Text('Laden'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),
@@ -483,5 +588,94 @@ class _EditBookScreenState extends State<EditBookScreen> {
     if (rating >= 4.0) return 'C-Tier (Okay)';
     if (rating >= 2.0) return 'D-Tier (Schwach)';
     return 'F-Tier (Schlecht)';
+  }
+}
+
+/// Screen für Barcode-Scanner
+class _BarcodeScannerScreen extends StatefulWidget {
+  const _BarcodeScannerScreen();
+
+  @override
+  State<_BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
+}
+
+class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
+  MobileScannerController cameraController = MobileScannerController();
+  bool _scanned = false;
+
+  @override
+  void dispose() {
+    cameraController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Barcode scannen'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flash_on),
+            onPressed: () => cameraController.toggleTorch(),
+            tooltip: 'Taschenlampe',
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: cameraController,
+            onDetect: (capture) {
+              if (_scanned) return;
+
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isEmpty) return;
+
+              final barcode = barcodes.first;
+              final String? code = barcode.rawValue;
+
+              if (code != null && code.isNotEmpty) {
+                setState(() => _scanned = true);
+                Navigator.pop(context, code);
+              }
+            },
+          ),
+          // Overlay mit Hinweis
+          Center(
+            child: Container(
+              width: 300,
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Text(
+                  'Halte den Barcode in den Rahmen',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

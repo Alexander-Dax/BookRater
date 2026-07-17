@@ -21,7 +21,7 @@ class CsvService {
       final books = await _db.getAllBooks();
 
       if (books.isEmpty) {
-        print('Keine Bücher zum Exportieren vorhanden');
+        // Keine Bücher zum Exportieren vorhanden
         return null;
       }
 
@@ -49,10 +49,10 @@ class CsvService {
       final file = File(filePath);
       await file.writeAsString(lines.join('\n'));
 
-      print('CSV exportiert nach: $filePath');
+      // CSV erfolgreich exportiert
       return filePath;
     } catch (e) {
-      print('Fehler beim CSV-Export: $e');
+      // Fehler beim CSV-Export
       return null;
     }
   }
@@ -102,7 +102,7 @@ class CsvService {
             importedBooks.add(book);
           }
         } catch (e) {
-          print('Fehler beim Parsen von Zeile $i: $e');
+          // Fehler beim Parsen von Zeile - überspringe und fahre fort
         }
       }
 
@@ -153,7 +153,7 @@ class CsvService {
         overwritten: overwritten,
       );
     } catch (e) {
-      print('Fehler beim CSV-Import: $e');
+      // Fehler beim CSV-Import
       return ImportResult(success: false, message: 'Fehler: $e');
     }
   }
@@ -171,13 +171,13 @@ class CsvService {
     final fields = _parseCsvFields(line);
 
     if (fields.length < 7) {
-      print('Ungültige Zeile (zu wenige Felder): $line');
+      // Ungültige Zeile (zu wenige Felder)
       return null;
     }
 
     final titel = fields[0].trim();
     if (titel.isEmpty) {
-      print('Titel fehlt in Zeile: $line');
+      // Titel fehlt in Zeile
       return null;
     }
 
@@ -191,7 +191,7 @@ class CsvService {
         meta: fields.length > 5 && fields[5].trim().isNotEmpty ? fields[5].trim() : null,
       );
     } catch (e) {
-      print('Fehler beim Parsen von Zeile: $line - $e');
+      // Fehler beim Parsen der Zeile (z.B. ungültiges Rating-Format)
       return null;
     }
   }
