@@ -54,16 +54,9 @@ jobs:
           fi
           echo "✅ All required secrets are set"
 
-      - name: Create keystore file
-        run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> key.properties
-          echo "storeFile=app/upload-keystore.jks" >> key.properties
-          cat key.properties
-
       - name: Decode and save keystore
         run: |
+          mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
           if [ ! -f android/app/upload-keystore.jks ]; then
             echo "❌ ERROR: Keystore file was not created!"
@@ -71,6 +64,17 @@ jobs:
           fi
           echo "✅ Keystore file created successfully"
           ls -lh android/app/upload-keystore.jks
+
+      - name: Create key.properties file
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=app/upload-keystore.jks
+          EOF
+          echo "✅ Created key.properties:"
+          cat android/key.properties
 
       - name: Build APK
         run: flutter build apk --release
