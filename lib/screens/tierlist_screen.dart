@@ -406,8 +406,6 @@ class _TierListScreenState extends State<TierListScreen> {
             _detailRow(t('tier'), _getTierForRating(book.rating)),
             if (book.jahrGelesen != null)
               _detailRow(t('year_read'), book.jahrGelesen.toString()),
-            if (book.wortzahl != null)
-              _detailRow(t('word_count'), book.wortzahl.toString()),
             if (book.meta != null && book.meta!.isNotEmpty)
               _detailRow(t('notes'), book.meta!),
           ],

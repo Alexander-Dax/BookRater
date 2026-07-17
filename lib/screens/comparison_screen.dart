@@ -7,10 +7,12 @@ import '../services/rating_service.dart';
 /// Screen für den Paarvergleich beim Einsortieren eines neuen Buches
 class ComparisonScreen extends StatefulWidget {
   final Book newBook;
+  final bool useRandomComparison;
 
   const ComparisonScreen({
     super.key,
     required this.newBook,
+    this.useRandomComparison = false,
   });
 
   @override
@@ -21,6 +23,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   final DatabaseService _db = DatabaseService.instance;
 
   Inserter? _inserter;
+  RandomInserter? _randomInserter;
   List<Book> _booksAsc = [];
   bool _isLoading = true;
   bool _isProcessing = false;
@@ -44,28 +47,49 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     }
 
     // Starte den Vergleichsprozess
-    _inserter = Inserter(_booksAsc, widget.newBook.rating);
+    if (widget.useRandomComparison) {
+      // Random comparison mode
+      _randomInserter = RandomInserter(_booksAsc);
 
-    if (_inserter!.done) {
-      // Keine Vergleiche nötig (sehr unwahrscheinlich)
-      await _saveBook(position: _inserter!.position!);
-      return;
+      if (_randomInserter!.done) {
+        await _saveBook(position: _randomInserter!.position!);
+        return;
+      }
+    } else {
+      // Seed-based comparison mode
+      _inserter = Inserter(_booksAsc, widget.newBook.rating);
+
+      if (_inserter!.done) {
+        // Keine Vergleiche nötig (sehr unwahrscheinlich)
+        await _saveBook(position: _inserter!.position!);
+        return;
+      }
     }
 
     setState(() => _isLoading = false);
   }
 
   Future<void> _answer(ComparisonResult result) async {
-    if (_inserter == null || _isProcessing) return;
+    if ((_inserter == null && _randomInserter == null) || _isProcessing) return;
 
     setState(() => _isProcessing = true);
 
-    _inserter!.answer(result);
+    if (widget.useRandomComparison) {
+      _randomInserter!.answer(result);
 
-    if (_inserter!.done) {
-      await _saveBook(position: _inserter!.position!);
+      if (_randomInserter!.done) {
+        await _saveBook(position: _randomInserter!.position!);
+      } else {
+        setState(() => _isProcessing = false);
+      }
     } else {
-      setState(() => _isProcessing = false);
+      _inserter!.answer(result);
+
+      if (_inserter!.done) {
+        await _saveBook(position: _inserter!.position!);
+      } else {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
@@ -116,14 +140,18 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       );
     }
 
-    final currentBook = _inserter!.currentBook;
+    final currentBook = widget.useRandomComparison
+        ? _randomInserter!.currentBook
+        : _inserter!.currentBook;
     if (currentBook == null) {
       return const Scaffold(
         body: Center(child: Text('Fehler: Kein Buch zum Vergleichen')),
       );
     }
 
-    final questionNo = _inserter!.questionCount + 1;
+    final questionNo = widget.useRandomComparison
+        ? _randomInserter!.questionCount + 1
+        : _inserter!.questionCount + 1;
 
     return Scaffold(
       appBar: AppBar(

@@ -4,7 +4,6 @@ class Book {
   String titel;
   String? autor;
   String? isbn; // ISBN-13 oder ISBN-10
-  int? wortzahl;
   int? jahrGelesen;
   String? meta;
   double rating;
@@ -15,7 +14,6 @@ class Book {
     required this.titel,
     this.autor,
     this.isbn,
-    this.wortzahl,
     this.jahrGelesen,
     this.meta,
     required this.rating,
@@ -29,7 +27,6 @@ class Book {
       'titel': titel,
       'autor': autor,
       'isbn': isbn,
-      'wortzahl': wortzahl,
       'jahr_gelesen': jahrGelesen,
       'meta': meta,
       'rating': rating,
@@ -44,7 +41,6 @@ class Book {
       titel: map['titel'] as String,
       autor: map['autor'] as String?,
       isbn: map['isbn'] as String?,
-      wortzahl: map['wortzahl'] as int?,
       jahrGelesen: map['jahr_gelesen'] as int?,
       meta: map['meta'] as String?,
       rating: map['rating'] as double,
@@ -58,7 +54,6 @@ class Book {
     String? titel,
     String? autor,
     String? isbn,
-    int? wortzahl,
     int? jahrGelesen,
     String? meta,
     double? rating,
@@ -69,7 +64,6 @@ class Book {
       titel: titel ?? this.titel,
       autor: autor ?? this.autor,
       isbn: isbn ?? this.isbn,
-      wortzahl: wortzahl ?? this.wortzahl,
       jahrGelesen: jahrGelesen ?? this.jahrGelesen,
       meta: meta ?? this.meta,
       rating: rating ?? this.rating,

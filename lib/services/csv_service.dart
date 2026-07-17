@@ -14,7 +14,7 @@ class CsvService {
 
   /// Exportiert alle Bücher als CSV-Datei
   ///
-  /// Format: titel,autor,isbn,wortzahl,jahr_gelesen,rating,meta
+  /// Format: titel,autor,isbn,jahr_gelesen,rating,meta
   Future<String?> exportToCSV() async {
     try {
       // Hole alle Bücher
@@ -27,7 +27,7 @@ class CsvService {
 
       // CSV Header
       final lines = <String>[];
-      lines.add('titel,autor,isbn,wortzahl,jahr_gelesen,rating,meta');
+      lines.add('titel,autor,isbn,jahr_gelesen,rating,meta');
 
       // Bücher als CSV-Zeilen
       for (final book in books) {
@@ -35,7 +35,6 @@ class CsvService {
           _escapeCsv(book.titel),
           _escapeCsv(book.autor ?? ''),
           _escapeCsv(book.isbn ?? ''),
-          book.wortzahl?.toString() ?? '',
           book.jahrGelesen?.toString() ?? '',
           book.rating.toString(),
           _escapeCsv(book.meta ?? ''),
@@ -132,7 +131,6 @@ class CsvService {
           titel: book.titel,
           autor: book.autor,
           isbn: book.isbn,
-          wortzahl: book.wortzahl,
           jahrGelesen: book.jahrGelesen,
           rating: book.rating,
           meta: book.meta,
@@ -188,10 +186,9 @@ class CsvService {
         titel: titel,
         autor: fields[1].trim().isEmpty ? null : fields[1].trim(),
         isbn: fields[2].trim().isEmpty ? null : fields[2].trim(),
-        wortzahl: fields[3].trim().isEmpty ? null : int.tryParse(fields[3].trim()),
-        jahrGelesen: fields[4].trim().isEmpty ? null : int.tryParse(fields[4].trim()),
-        rating: double.parse(fields[5].trim()),
-        meta: fields[6].trim().isEmpty ? null : fields[6].trim(),
+        jahrGelesen: fields[3].trim().isEmpty ? null : int.tryParse(fields[3].trim()),
+        rating: double.parse(fields[4].trim()),
+        meta: fields.length > 5 && fields[5].trim().isNotEmpty ? fields[5].trim() : null,
       );
     } catch (e) {
       print('Fehler beim Parsen von Zeile: $line - $e');

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/book.dart';
+import '../services/isbn_service.dart';
 
 /// Screen zum Hinzufügen eines neuen Buches
 class AddBookScreen extends StatefulWidget {
@@ -16,17 +18,20 @@ class _AddBookScreenState extends State<AddBookScreen> {
   final _titelController = TextEditingController();
   final _autorController = TextEditingController();
   final _isbnController = TextEditingController();
-  final _wortzahlController = TextEditingController();
   final _jahrController = TextEditingController();
   final _metaController = TextEditingController();
+  final _ratingController = TextEditingController();
 
   double _rating = 6.0;
+  bool _skipInitialRating = false;
 
   @override
   void initState() {
     super.initState();
     // Standard: Aktuelles Jahr
     _jahrController.text = DateTime.now().year.toString();
+    // Standard-Rating
+    _ratingController.text = _rating.toStringAsFixed(1);
   }
 
   @override
@@ -34,9 +39,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
     _titelController.dispose();
     _autorController.dispose();
     _isbnController.dispose();
-    _wortzahlController.dispose();
     _jahrController.dispose();
     _metaController.dispose();
+    _ratingController.dispose();
     super.dispose();
   }
 
@@ -50,20 +55,76 @@ class _AddBookScreenState extends State<AddBookScreen> {
       titel: _titelController.text.trim(),
       autor: _autorController.text.trim().isEmpty ? null : _autorController.text.trim(),
       isbn: _isbnController.text.trim().isEmpty ? null : _isbnController.text.trim(),
-      wortzahl: _parseIntOrNull(_wortzahlController.text),
       jahrGelesen: _parseIntOrNull(_jahrController.text),
       meta: _metaController.text.trim().isEmpty ? null : _metaController.text.trim(),
-      rating: _rating,
+      rating: _skipInitialRating ? 5.0 : _rating, // Use 5.0 as middle value if skipping
     );
 
-    // Zurück zum HomeScreen mit dem Buch
-    Navigator.pop(context, book);
+    // Zurück zum HomeScreen mit dem Buch und Info ob Rating übersprungen wurde
+    Navigator.pop(context, {'book': book, 'skipRating': _skipInitialRating});
   }
 
   int? _parseIntOrNull(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return null;
     return int.tryParse(trimmed);
+  }
+
+  /// Öffnet den Barcode-Scanner
+  Future<void> _scanBarcode() async {
+    final isbn = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const _BarcodeScannerScreen(),
+      ),
+    );
+
+    if (isbn == null) return;
+
+    // Zeige Loading-Indikator
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Lookup ISBN
+    final bookInfo = await IsbnService.instance.lookup(isbn);
+
+    if (!mounted) return;
+    Navigator.pop(context); // Schließe Loading-Dialog
+
+    if (bookInfo == null) {
+      // Keine Daten gefunden - nur ISBN setzen
+      _isbnController.text = isbn;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ISBN gescannt, aber keine Buchdaten gefunden'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Fülle Felder aus
+    _isbnController.text = bookInfo['isbn'] ?? isbn;
+    if (bookInfo['title'] != null) {
+      _titelController.text = bookInfo['title']!;
+    }
+    if (bookInfo['author'] != null) {
+      _autorController.text = bookInfo['author']!;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✓ Buchdaten geladen'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -111,45 +172,33 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
             const SizedBox(height: 16),
 
-            // ISBN
+            // ISBN mit Barcode-Scanner
             TextFormField(
               controller: _isbnController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'ISBN',
                 hintText: '978-3-16-148410-0',
-                border: OutlineInputBorder(),
-                helperText: 'Optional: Für automatisches Cover-Download',
+                border: const OutlineInputBorder(),
+                helperText: 'Barcode scannen oder manuell eingeben',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: _scanBarcode,
+                  tooltip: 'Barcode scannen',
+                ),
               ),
               keyboardType: TextInputType.number,
             ),
 
             const SizedBox(height: 16),
 
-            // Jahr gelesen und Wortzahl (nebeneinander)
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _jahrController,
-                    decoration: const InputDecoration(
-                      labelText: 'Jahr gelesen',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _wortzahlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Wortzahl',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
+            // Jahr gelesen
+            TextFormField(
+              controller: _jahrController,
+              decoration: const InputDecoration(
+                labelText: 'Jahr gelesen',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
             ),
 
             const SizedBox(height: 16),
@@ -175,59 +224,120 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Grobes Start-Rating',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Grobes Start-Rating',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        // Checkbox zum Überspringen
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: _skipInitialRating,
+                              onChanged: (value) {
+                                setState(() => _skipInitialRating = value ?? false);
+                              },
+                            ),
+                            const Text('Überspringen'),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Wird durch Paarvergleiche verfeinert',
+                      _skipInitialRating
+                          ? 'Das Buch wird durch zufällige Paarvergleiche einsortiert'
+                          : 'Wird durch Paarvergleiche verfeinert',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.grey[600],
                           ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Slider(
-                            value: _rating,
-                            min: 0.0,
-                            max: 10.0,
-                            divisions: 100,
-                            label: _rating.toStringAsFixed(1),
-                            onChanged: (value) {
-                              setState(() => _rating = value);
-                            },
+                    if (!_skipInitialRating) ...[
+                      const SizedBox(height: 16),
+                      // Text Field für direkte Eingabe
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _ratingController,
+                              decoration: const InputDecoration(
+                                labelText: 'Rating (0-10)',
+                                border: OutlineInputBorder(),
+                                helperText: 'Oder nutze den Slider unten',
+                              ),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (value) {
+                                final parsed = double.tryParse(value);
+                                if (parsed != null && parsed >= 0 && parsed <= 10) {
+                                  setState(() => _rating = parsed);
+                                }
+                              },
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Bitte Rating eingeben';
+                                }
+                                final parsed = double.tryParse(value);
+                                if (parsed == null) {
+                                  return 'Ungültige Zahl';
+                                }
+                                if (parsed < 0 || parsed > 10) {
+                                  return 'Rating muss zwischen 0 und 10 liegen';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        SizedBox(
-                          width: 60,
-                          child: Text(
-                            _rating.toStringAsFixed(1),
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: _getRatingColor(_rating),
+                          const SizedBox(width: 16),
+                          // Rating Anzeige
+                          SizedBox(
+                            width: 60,
+                            child: Column(
+                              children: [
+                                Text(
+                                  _rating.toStringAsFixed(1),
+                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: _getRatingColor(_rating),
+                                      ),
+                                  textAlign: TextAlign.center,
                                 ),
-                            textAlign: TextAlign.center,
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    // Tier-Anzeige
-                    Center(
-                      child: Chip(
-                        label: Text(
-                          _getTierName(_rating),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        backgroundColor: _getRatingColor(_rating),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      // Slider
+                      Slider(
+                        value: _rating,
+                        min: 0.0,
+                        max: 10.0,
+                        divisions: 100,
+                        label: _rating.toStringAsFixed(1),
+                        onChanged: (value) {
+                          setState(() {
+                            _rating = value;
+                            _ratingController.text = value.toStringAsFixed(1);
+                          });
+                        },
+                      ),
+                      // Tier-Anzeige
+                      Center(
+                        child: Chip(
+                          label: Text(
+                            _getTierName(_rating),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          backgroundColor: _getRatingColor(_rating),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -273,5 +383,94 @@ class _AddBookScreenState extends State<AddBookScreen> {
     if (rating >= 4.0) return 'C-Tier (Okay)';
     if (rating >= 2.0) return 'D-Tier (Schwach)';
     return 'F-Tier (Schlecht)';
+  }
+}
+
+/// Screen für Barcode-Scanner
+class _BarcodeScannerScreen extends StatefulWidget {
+  const _BarcodeScannerScreen();
+
+  @override
+  State<_BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
+}
+
+class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
+  MobileScannerController cameraController = MobileScannerController();
+  bool _scanned = false;
+
+  @override
+  void dispose() {
+    cameraController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Barcode scannen'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flash_on),
+            onPressed: () => cameraController.toggleTorch(),
+            tooltip: 'Taschenlampe',
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: cameraController,
+            onDetect: (capture) {
+              if (_scanned) return;
+
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isEmpty) return;
+
+              final barcode = barcodes.first;
+              final String? code = barcode.rawValue;
+
+              if (code != null && code.isNotEmpty) {
+                setState(() => _scanned = true);
+                Navigator.pop(context, code);
+              }
+            },
+          ),
+          // Overlay mit Hinweis
+          Center(
+            child: Container(
+              width: 300,
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Text(
+                  'Halte den Barcode in den Rahmen',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

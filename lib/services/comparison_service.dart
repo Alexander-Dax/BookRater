@@ -265,3 +265,131 @@ class Inserter {
   /// Anzahl der bisher gestellten Fragen
   int get questionCount => answers.length;
 }
+
+/// Random comparison inserter for books without initial rating
+///
+/// Uses random comparisons to gradually sort a book into the list
+class RandomInserter {
+  final List<Book> booksAsc;
+  final Map<int, ComparisonResult> answers = {};
+
+  bool done = false;
+  int? position;
+  int? currentIndex;
+
+  int _lowestBetter = -1; // Index of lowest book that is worse than new book
+  int _highestWorse = -1; // Index of highest book that is better than new book
+
+  RandomInserter(this.booksAsc) {
+    if (booksAsc.isEmpty) {
+      done = true;
+      position = 0;
+      return;
+    }
+
+    _highestWorse = booksAsc.length; // Start: new book could be anywhere
+    _pickNextComparison();
+  }
+
+  void _pickNextComparison() {
+    // Range where the book could be inserted: (_lowestBetter, _highestWorse)
+    final rangeSize = _highestWorse - _lowestBetter - 1;
+
+    if (rangeSize <= 0) {
+      // Range is narrowed down to a single position
+      done = true;
+      position = _highestWorse;
+      currentIndex = null;
+      return;
+    }
+
+    // Pick a random book from the remaining range
+    final availableIndices = <int>[];
+    for (int i = _lowestBetter + 1; i < _highestWorse; i++) {
+      if (!answers.containsKey(i)) {
+        availableIndices.add(i);
+      }
+    }
+
+    if (availableIndices.isEmpty) {
+      // All books in range have been compared, narrow down based on answers
+      _narrowRange();
+      if (!done) {
+        _pickNextComparison();
+      }
+      return;
+    }
+
+    // Pick random index from available
+    final randomIdx = availableIndices[DateTime.now().millisecondsSinceEpoch % availableIndices.length];
+    currentIndex = randomIdx;
+  }
+
+  void _narrowRange() {
+    // Find the actual bounds based on answers
+    for (int i = _lowestBetter + 1; i < _highestWorse; i++) {
+      if (!answers.containsKey(i)) continue;
+
+      final result = answers[i]!;
+      if (result == ComparisonResult.better) {
+        // New book is better than book at index i
+        if (i > _lowestBetter) {
+          _lowestBetter = i;
+        }
+      } else if (result == ComparisonResult.worse) {
+        // New book is worse than book at index i
+        if (i < _highestWorse) {
+          _highestWorse = i;
+        }
+      } else {
+        // Equal - insert at this position
+        done = true;
+        position = i;
+        return;
+      }
+    }
+
+    // Check if range is narrowed to single position
+    if (_highestWorse - _lowestBetter <= 1) {
+      done = true;
+      position = _highestWorse;
+    }
+  }
+
+  /// Gibt das aktuell zu vergleichende Buch zurück
+  Book? get currentBook {
+    if (done || currentIndex == null) return null;
+    return booksAsc[currentIndex!];
+  }
+
+  /// Verarbeitet eine Antwort und geht zum nächsten Schritt
+  void answer(ComparisonResult result) {
+    if (done || currentIndex == null) return;
+
+    answers[currentIndex!] = result;
+
+    if (result == ComparisonResult.equal) {
+      done = true;
+      position = currentIndex;
+      currentIndex = null;
+      return;
+    }
+
+    if (result == ComparisonResult.better) {
+      // New book is better than current book
+      if (currentIndex! > _lowestBetter) {
+        _lowestBetter = currentIndex!;
+      }
+    } else {
+      // New book is worse than current book
+      if (currentIndex! < _highestWorse) {
+        _highestWorse = currentIndex!;
+      }
+    }
+
+    _pickNextComparison();
+  }
+
+  /// Anzahl der bisher gestellten Fragen
+  int get questionCount => answers.length;
+}

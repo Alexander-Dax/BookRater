@@ -27,7 +27,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
   late final TextEditingController _titelController;
   late final TextEditingController _autorController;
   late final TextEditingController _isbnController;
-  late final TextEditingController _wortzahlController;
   late final TextEditingController _jahrController;
   late final TextEditingController _metaController;
 
@@ -41,9 +40,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
     _titelController = TextEditingController(text: widget.book.titel);
     _autorController = TextEditingController(text: widget.book.autor ?? '');
     _isbnController = TextEditingController(text: widget.book.isbn ?? '');
-    _wortzahlController = TextEditingController(
-      text: widget.book.wortzahl?.toString() ?? '',
-    );
     _jahrController = TextEditingController(
       text: widget.book.jahrGelesen?.toString() ?? '',
     );
@@ -58,7 +54,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
     _titelController.dispose();
     _autorController.dispose();
     _isbnController.dispose();
-    _wortzahlController.dispose();
     _jahrController.dispose();
     _metaController.dispose();
     super.dispose();
@@ -78,7 +73,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
       isbn: _isbnController.text.trim().isEmpty
           ? null
           : _isbnController.text.trim(),
-      wortzahl: _parseIntOrNull(_wortzahlController.text),
       jahrGelesen: _parseIntOrNull(_jahrController.text),
       meta:
           _metaController.text.trim().isEmpty ? null : _metaController.text.trim(),
@@ -359,31 +353,14 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
             const SizedBox(height: 16),
 
-            // Jahr gelesen und Wortzahl
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _jahrController,
-                    decoration: const InputDecoration(
-                      labelText: 'Jahr gelesen',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _wortzahlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Wortzahl',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
+            // Jahr gelesen
+            TextFormField(
+              controller: _jahrController,
+              decoration: const InputDecoration(
+                labelText: 'Jahr gelesen',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
             ),
 
             const SizedBox(height: 16),

@@ -50,21 +50,27 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Startet den Prozess zum Hinzufügen eines neuen Buches
   Future<void> _addBook() async {
     // 1. Öffne AddBookScreen für Metadaten + Start-Rating
-    final Book? newBook = await Navigator.push<Book>(
+    final addResult = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (context) => const AddBookScreen(),
       ),
     );
 
-    if (newBook == null) return; // Abgebrochen
+    if (addResult == null) return; // Abgebrochen
+
+    final Book newBook = addResult['book'] as Book;
+    final bool skipRating = addResult['skipRating'] as bool;
 
     // 2. Öffne ComparisonScreen für Paarvergleiche
     if (!mounted) return;
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
-        builder: (context) => ComparisonScreen(newBook: newBook),
+        builder: (context) => ComparisonScreen(
+          newBook: newBook,
+          useRandomComparison: skipRating,
+        ),
       ),
     );
 
