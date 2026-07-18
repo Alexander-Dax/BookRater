@@ -39,5 +39,5 @@ const List<TierConfig> tiers = [
 
 /// Datenbank-Konfiguration
 const String databaseName = 'book_rater.db';
-const int databaseVersion = 2; // Erhöht für ISBN + Cover-URL
+const int databaseVersion = 3; // Version 3: Manga-Support (media_type, mal_id)
 const String booksTable = 'books';

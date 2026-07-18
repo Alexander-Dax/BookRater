@@ -165,103 +165,105 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   }
 
   Widget _buildComparisonContent(Book currentBook, int questionNo) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Fragen-Fortschritt
-          Text(
-            'Frage $questionNo',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-          ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Fragen-Fortschritt
+            Text(
+              'Frage $questionNo',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Überschrift
-          Text(
-            'Welches Buch gefällt dir besser?',
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
+            // Überschrift
+            Text(
+              'Welches Buch gefällt dir besser?',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
 
-          const Spacer(),
+            const SizedBox(height: 32),
 
-          // Neues Buch
-          _buildBookCard(
-            book: widget.newBook,
-            label: 'NEU',
-            isNew: true,
-          ),
+            // Neues Buch
+            _buildBookCard(
+              book: widget.newBook,
+              label: 'NEU',
+              isNew: true,
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // VS
-          Text(
-            'vs.',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey[400],
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
+            // VS
+            Text(
+              'vs.',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[400],
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Vergleichs-Buch
-          _buildBookCard(
-            book: currentBook,
-            label: 'Rating: ${currentBook.rating.toStringAsFixed(2)}',
-            isNew: false,
-          ),
+            // Vergleichs-Buch
+            _buildBookCard(
+              book: currentBook,
+              label: 'Rating: ${currentBook.rating.toStringAsFixed(2)}',
+              isNew: false,
+            ),
 
-          const Spacer(),
+            const SizedBox(height: 32),
 
-          // Antwort-Buttons
-          Column(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _answer(ComparisonResult.better),
-                  icon: const Icon(Icons.arrow_upward),
-                  label: const Text('Das NEUE ist besser'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    padding: const EdgeInsets.all(20),
+            // Antwort-Buttons
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _answer(ComparisonResult.better),
+                    icon: const Icon(Icons.arrow_upward),
+                    label: const Text('Das NEUE ist besser'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green[600],
+                      padding: const EdgeInsets.all(20),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _answer(ComparisonResult.equal),
-                  icon: const Icon(Icons.drag_handle),
-                  label: const Text('Etwa gleich'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(20),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _answer(ComparisonResult.equal),
+                    icon: const Icon(Icons.drag_handle),
+                    label: const Text('Etwa gleich'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(20),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _answer(ComparisonResult.worse),
-                  icon: const Icon(Icons.arrow_downward),
-                  label: const Text('Das NEUE ist schlechter'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red[600],
-                    padding: const EdgeInsets.all(20),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _answer(ComparisonResult.worse),
+                    icon: const Icon(Icons.arrow_downward),
+                    label: const Text('Das NEUE ist schlechter'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red[600],
+                      padding: const EdgeInsets.all(20),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -304,6 +306,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                     fontWeight: FontWeight.bold,
                   ),
               textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
 
             if (book.autor != null && book.autor!.isNotEmpty) ...[
@@ -314,6 +318,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                       color: Colors.grey[600],
                     ),
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ],

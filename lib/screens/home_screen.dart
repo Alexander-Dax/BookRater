@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
+import '../models/media_type.dart';
 import '../services/database_service.dart';
 import '../services/language_service.dart';
 import '../widgets/book_cover.dart';
 import 'add_book_screen.dart';
+import 'add_manga_screen.dart';
 import 'comparison_screen.dart';
 import 'edit_book_screen.dart';
 import 'import_export_screen.dart';
@@ -48,6 +50,42 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Zeigt Dialog zur Auswahl des Medientyps (Buch oder Manga)
+  Future<void> _showAddMediaDialog() async {
+    final mediaType = await showDialog<MediaType>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t('add_media_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.book, size: 40),
+              title: Text(t('add_book_option')),
+              subtitle: Text(t('add_book_subtitle')),
+              onTap: () => Navigator.pop(context, MediaType.book),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.auto_stories, size: 40),
+              title: Text(t('add_manga_option')),
+              subtitle: Text(t('add_manga_subtitle')),
+              onTap: () => Navigator.pop(context, MediaType.manga),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (mediaType == null) return;
+
+    if (mediaType == MediaType.book) {
+      await _addBook();
+    } else {
+      await _addManga();
+    }
+  }
+
   /// Startet den Prozess zum Hinzufügen eines neuen Buches
   Future<void> _addBook() async {
     // 1. Öffne AddBookScreen für Metadaten + Start-Rating
@@ -87,6 +125,54 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text(
           '✓ "${savedBook.titel}" hinzugefügt! '
           '${changed > 0 ? '$changed ${changed == 1 ? 'Buch' : 'Bücher'} neu bewertet.' : 'Keine Anpassungen nötig.'}',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // 4. Liste neu laden
+    _loadBooks();
+  }
+
+  /// Startet den Prozess zum Hinzufügen einer neuen Manga-Serie
+  Future<void> _addManga() async {
+    // 1. Öffne AddMangaScreen für Metadaten
+    final addResult = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMangaScreen(languageService: widget.languageService),
+      ),
+    );
+
+    if (addResult == null) return; // Abgebrochen
+
+    final Book newManga = addResult['book'] as Book;
+    final bool skipRating = addResult['skipRating'] as bool;
+
+    // 2. Öffne ComparisonScreen für Paarvergleiche
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ComparisonScreen(
+          newBook: newManga,
+          useRandomComparison: skipRating,
+        ),
+      ),
+    );
+
+    if (result == null) return; // Abgebrochen
+
+    // 3. Zeige Erfolgs-Meldung
+    if (!mounted) return;
+    final savedManga = result['book'] as Book;
+    final changed = result['changed'] as int;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '✓ "${savedManga.titel}" hinzugefügt! '
+          '${changed > 0 ? '$changed ${changed == 1 ? 'Buch' : 'Manga'} neu bewertet.' : 'Keine Anpassungen nötig.'}',
         ),
         duration: const Duration(seconds: 3),
       ),
@@ -149,49 +235,10 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(t('app_title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          // Language Toggle
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.language),
-            tooltip: widget.languageService.currentLanguage == 'de' ? 'Sprache' : 'Language',
-            onSelected: (languageCode) {
-              widget.languageService.setLanguage(languageCode);
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'de',
-                child: Row(
-                  children: [
-                    Text('🇩🇪'),
-                    SizedBox(width: 8),
-                    Text('Deutsch'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'en',
-                child: Row(
-                  children: [
-                    Text('🇬🇧'),
-                    SizedBox(width: 8),
-                    Text('English'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // Dark Mode Toggle
+          // Prominent Tier-List Button
           IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-            ),
-            onPressed: widget.onToggleTheme,
-            tooltip: t('toggle_theme'),
-          ),
-          // Tier-List Button
-          IconButton(
-            icon: const Icon(Icons.view_list),
+            icon: const Icon(Icons.emoji_events),
+            iconSize: 28,
             onPressed: () {
               Navigator.push(
                 context,
@@ -202,36 +249,106 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             tooltip: t('show_tierlist'),
           ),
-          // Import/Export Button
-          IconButton(
-            icon: const Icon(Icons.import_export),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ImportExportScreen(languageService: widget.languageService),
-                ),
-              ).then((_) => _loadBooks()); // Reload books after import/export
+          // Hamburger Menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: t('more'),
+            onSelected: (value) {
+              switch (value) {
+                case 'refresh':
+                  _loadBooks();
+                  break;
+                case 'import_export':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImportExportScreen(languageService: widget.languageService),
+                    ),
+                  ).then((_) => _loadBooks());
+                  break;
+                case 'theme':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ThemeSelectionScreen(),
+                    ),
+                  );
+                  break;
+                case 'dark_mode':
+                  widget.onToggleTheme();
+                  break;
+                case 'de':
+                case 'en':
+                  widget.languageService.setLanguage(value);
+                  break;
+              }
             },
-            tooltip: 'Import & Export',
-          ),
-          // Theme Selection Button
-          IconButton(
-            icon: const Icon(Icons.palette),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ThemeSelectionScreen(),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh),
+                    const SizedBox(width: 12),
+                    Text(t('refresh')),
+                  ],
                 ),
-              );
-            },
-            tooltip: 'Farbschema',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadBooks,
-            tooltip: t('refresh'),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'import_export',
+                child: Row(
+                  children: [
+                    const Icon(Icons.import_export),
+                    const SizedBox(width: 12),
+                    Text(t('import_export')),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'theme',
+                child: Row(
+                  children: [
+                    const Icon(Icons.palette),
+                    const SizedBox(width: 12),
+                    Text(t('theme_selection')),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'dark_mode',
+                child: Row(
+                  children: [
+                    Icon(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Icons.light_mode
+                          : Icons.dark_mode,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? t('light_mode')
+                          : t('dark_mode'),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: widget.languageService.currentLanguage == 'de' ? 'en' : 'de',
+                child: Row(
+                  children: [
+                    const Icon(Icons.language),
+                    const SizedBox(width: 12),
+                    Text(
+                      widget.languageService.currentLanguage == 'de'
+                          ? '🇬🇧 English'
+                          : '🇩🇪 Deutsch',
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -241,8 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ? _buildEmptyState()
               : _buildBookList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addBook,
-        tooltip: t('add_book'),
+        onPressed: _showAddMediaDialog,
+        tooltip: 'Hinzufügen',
         child: const Icon(Icons.add),
       ),
     );

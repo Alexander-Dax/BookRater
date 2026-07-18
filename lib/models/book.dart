@@ -1,13 +1,18 @@
-/// Datenmodell für ein Buch
+import 'media_type.dart';
+
+/// Datenmodell für ein Buch oder Manga-Serie
+/// Unterstützt beide Medientypen mit gemeinsamer Rating-Logik
 class Book {
   int? id; // Datenbank-ID (null für neue Bücher)
   String titel;
   String? autor;
-  String? isbn; // ISBN-13 oder ISBN-10
+  String? isbn; // ISBN-13 oder ISBN-10 (nur für Bücher)
   int? jahrGelesen;
   String? meta;
   double rating;
   String? coverUrl; // URL zum Buchcover (lokal oder remote)
+  MediaType mediaType; // Typ: Buch oder Manga
+  String? malId; // MyAnimeList ID (nur für Manga)
 
   Book({
     this.id,
@@ -18,6 +23,8 @@ class Book {
     this.meta,
     required this.rating,
     this.coverUrl,
+    this.mediaType = MediaType.book, // Standard: Buch
+    this.malId,
   });
 
   /// Konvertiert das Buch in eine Map für die Datenbank
@@ -31,6 +38,8 @@ class Book {
       'meta': meta,
       'rating': rating,
       'cover_url': coverUrl,
+      'media_type': mediaType.toJson(),
+      'mal_id': malId,
     };
   }
 
@@ -45,6 +54,10 @@ class Book {
       meta: map['meta'] as String?,
       rating: map['rating'] as double,
       coverUrl: map['cover_url'] as String?,
+      mediaType: map['media_type'] != null
+          ? MediaType.fromJson(map['media_type'] as String)
+          : MediaType.book, // Fallback für alte Daten
+      malId: map['mal_id'] as String?,
     );
   }
 
@@ -58,6 +71,8 @@ class Book {
     String? meta,
     double? rating,
     String? coverUrl,
+    MediaType? mediaType,
+    String? malId,
   }) {
     return Book(
       id: id ?? this.id,
@@ -68,6 +83,8 @@ class Book {
       meta: meta ?? this.meta,
       rating: rating ?? this.rating,
       coverUrl: coverUrl ?? this.coverUrl,
+      mediaType: mediaType ?? this.mediaType,
+      malId: malId ?? this.malId,
     );
   }
 

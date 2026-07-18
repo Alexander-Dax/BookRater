@@ -17,6 +17,7 @@ Diese Dokumentation ist in verschiedene Bereiche aufgeteilt, um eine einfache Na
   - [Buch-Management](features/book-management.md)
   - [Rating-System](features/rating-system.md)
   - [ISBN-Scanner](features/isbn-scanner.md)
+  - [Manga Support](features/manga-support.md)
   - [Import/Export](features/import-export.md)
   - [Tier-List](features/tier-list.md)
   - [Theme Customization](features/theme-customization.md)
@@ -146,6 +147,6 @@ Fehler gefunden? Verbesserungsvorschlag? Siehe [Contributing Guide](CONTRIBUTING
 
 ---
 
-**Letzte Aktualisierung**: 2026-07-17
-**Version**: 1.4.0
+**Letzte Aktualisierung**: 2026-07-18
+**Version**: 1.5.0
 **Maintainer**: BookRater Team

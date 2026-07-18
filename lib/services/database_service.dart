@@ -42,7 +42,9 @@ class DatabaseService {
         jahr_gelesen INTEGER,
         meta TEXT,
         rating REAL NOT NULL,
-        cover_url TEXT
+        cover_url TEXT,
+        media_type TEXT NOT NULL DEFAULT 'book',
+        mal_id TEXT
       )
     ''');
   }
@@ -53,6 +55,12 @@ class DatabaseService {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE $booksTable ADD COLUMN isbn TEXT');
       await db.execute('ALTER TABLE $booksTable ADD COLUMN cover_url TEXT');
+    }
+
+    // Migration von Version 2 auf 3: Manga-Support (media_type, mal_id)
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE $booksTable ADD COLUMN media_type TEXT NOT NULL DEFAULT \'book\'');
+      await db.execute('ALTER TABLE $booksTable ADD COLUMN mal_id TEXT');
     }
   }
 

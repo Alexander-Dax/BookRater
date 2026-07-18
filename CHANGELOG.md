@@ -12,9 +12,78 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Automatische Backups
 - Statistik-Dashboard
 - Export als PDF
+- Custom App Icon Design
 
 
-## [1.4.0] - 2026-07-17
+## [1.5.0] - 2026-07-18
+
+### Added (Neu hinzugefügt)
+- **Manga-Serie Support**: Verwaltung von Manga-Serien neben Büchern
+  - Neuer Medientyp-Enum (Book/Manga)
+  - MyAnimeList API Integration (Jikan API)
+  - AddMangaScreen mit MAL-Suche
+  - Automatisches Laden von Titel, Autor und Cover von MyAnimeList
+  - Media-Type Auswahldialog beim Hinzufügen
+  - Manga und Bücher verwenden dieselbe Rating-Logik
+  - Datenbank-Migration (Version 2 → 3) für media_type und mal_id Felder
+
+- **Redesigntes Top-Bar Navigation**: Klarere, sauberere Navigation
+  - Prominenter Tier-List Button (Trophäen-Icon, größer)
+  - Hamburger-Menü (3-Punkt-Icon) für sekundäre Aktionen
+  - Reduziert von 6 auf 2 sichtbare Action-Buttons
+  - Menü enthält: Refresh, Import/Export, Theme, Dark Mode, Language
+  - Bessere Usability auf kleineren Bildschirmen
+
+- **App Icon Infrastruktur**: Vorbereitung für custom App-Icon
+  - flutter_launcher_icons Package integriert
+  - Icon-Verzeichnis und Konfiguration erstellt
+  - Anleitung für Icon-Erstellung dokumentiert
+  - Adaptive Icon Support für Android
+
+### Changed (Geändert)
+- **Book Model erweitert**: Unterstützt jetzt Books und Manga
+  - Neues Feld: `mediaType` (MediaType enum)
+  - Neues Feld: `malId` (MyAnimeList ID für Manga)
+  - Backward-kompatibel: Bestehende Einträge werden als "book" markiert
+
+- **Database Schema Update**: Version 3
+  - `media_type` Spalte (TEXT, DEFAULT 'book')
+  - `mal_id` Spalte (TEXT, nullable)
+  - Automatische Migration bei App-Start
+
+- **HomeScreen UI**: Modernisiert
+  - FAB öffnet jetzt Media-Type Auswahldialog
+  - Vereinfachte App-Bar
+  - Bessere Struktur und Organisation
+
+### Technical
+- **Neue Services**:
+  - `MalService`: MyAnimeList API Integration
+  - Rate-Limiting (1 Anfrage/Sekunde)
+  - Fehlerbehandlung für Netzwerkprobleme
+
+- **Neue Screens**:
+  - `AddMangaScreen`: Manga-Eingabe mit MAL-Suche
+  - Media Type Selection Dialog
+
+- **Neue Models**:
+  - `MediaType` enum mit Serialisierung
+  - `MangaSearchResult` Datenklasse
+
+### Migration Notes
+- Datenbank migriert automatisch von Version 2 auf 3
+- Alle bestehenden Bücher behalten ihre Daten
+- Keine manuellen Schritte erforderlich
+- Rating-System funktioniert unverändert für beide Typen
+
+### Developer Notes
+- MyAnimeList verwendet Jikan API v4 (keine Auth erforderlich)
+- Rate-Limiting: 1 Request/Sekunde
+- Manga und Books teilen sich dieselbe Datenbanktabelle
+- Media-Type Filterung möglich (für zukünftige Features)
+
+
+## [1.2.0] - 2026-07-17
 
 ### Added (Neu hinzugefügt)
 - **Theme Customization**: Auswahl aus 8 vordefinierten Farbschemata

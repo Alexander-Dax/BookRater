@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/book.dart';
+import '../models/media_type.dart';
 import '../services/database_service.dart';
 import '../services/cover_service.dart';
 import '../services/isbn_service.dart';
@@ -240,10 +241,13 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
   /// Bestätigungs-Dialog fürs Löschen
   Future<void> _confirmDelete() async {
+    final isManga = widget.book.mediaType == MediaType.manga;
+    final mediaTypeName = isManga ? 'Manga' : 'Buch';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Buch löschen?'),
+        title: Text('$mediaTypeName löschen?'),
         content: Text(
           'Möchtest du "${widget.book.titel}" wirklich löschen? '
           'Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -273,9 +277,11 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isManga = widget.book.mediaType == MediaType.manga;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buch bearbeiten'),
+        title: Text(isManga ? 'Manga bearbeiten' : 'Buch bearbeiten'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           // Lösch-Button
@@ -336,11 +342,23 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Buchcover',
+                            isManga ? 'Manga-Cover' : 'Buchcover',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          if (widget.book.isbn == null || widget.book.isbn!.isEmpty)
+                          if (isManga)
+                            Text(
+                              widget.book.coverUrl != null
+                                  ? 'Cover von MyAnimeList'
+                                  : 'Kein Cover vorhanden',
+                              style: TextStyle(
+                                color: widget.book.coverUrl != null
+                                    ? Colors.green
+                                    : Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            )
+                          else if (widget.book.isbn == null || widget.book.isbn!.isEmpty)
                             Text(
                               'ISBN benötigt für automatischen Download',
                               style: TextStyle(
@@ -417,46 +435,61 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
             const SizedBox(height: 16),
 
-            // ISBN mit Barcode-Scanner
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _isbnController,
-                    decoration: InputDecoration(
-                      labelText: 'ISBN',
-                      hintText: '978-3-16-148410-0',
-                      border: const OutlineInputBorder(),
-                      helperText: 'Barcode scannen oder manuell eingeben',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.qr_code_scanner),
-                        onPressed: _scanBarcode,
-                        tooltip: 'Barcode scannen',
+            // ISBN mit Barcode-Scanner (nur für Bücher)
+            if (!isManga)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _isbnController,
+                      decoration: InputDecoration(
+                        labelText: 'ISBN',
+                        hintText: '978-3-16-148410-0',
+                        border: const OutlineInputBorder(),
+                        helperText: 'Barcode scannen oder manuell eingeben',
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner),
+                          onPressed: _scanBarcode,
+                          tooltip: 'Barcode scannen',
+                        ),
                       ),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: ElevatedButton.icon(
-                    onPressed: _lookupIsbn,
-                    icon: const Icon(Icons.search, size: 20),
-                    label: const Text('Laden'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
+                      keyboardType: TextInputType.number,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ElevatedButton.icon(
+                      onPressed: _lookupIsbn,
+                      icon: const Icon(Icons.search, size: 20),
+                      label: const Text('Laden'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 16),
+            // MyAnimeList ID (nur für Manga, read-only)
+            if (isManga && widget.book.malId != null)
+              TextFormField(
+                initialValue: widget.book.malId,
+                decoration: const InputDecoration(
+                  labelText: 'MyAnimeList ID',
+                  border: OutlineInputBorder(),
+                  helperText: 'ID von MyAnimeList',
+                ),
+                readOnly: true,
+                enabled: false,
+              ),
+
+            if (!isManga || (isManga && widget.book.malId != null))
+              const SizedBox(height: 16),
 
             // Jahr gelesen
             TextFormField(
